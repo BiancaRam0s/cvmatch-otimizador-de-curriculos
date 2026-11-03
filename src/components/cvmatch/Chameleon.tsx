@@ -22,11 +22,6 @@ export function Chameleon({ className, mood = "idle", title = "Camaleão do CVMa
           strokeWidth={15}
           d="M80 166 C 42 174, 20 144, 36 124 C 50 106, 78 114, 72 134 C 68 148, 50 147, 51 136"
         />
-        <path
-          className="cham-line"
-          strokeWidth={0}
-          d="M0 0"
-        />
         {/* back leg */}
         <ellipse className="cham-shade" cx={84} cy={170} rx={13} ry={9} />
 
