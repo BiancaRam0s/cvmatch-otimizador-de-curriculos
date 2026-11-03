@@ -142,7 +142,24 @@ export function OptimizedCv({ input, missing, onBusyChange }: Props) {
               </div>
             ) : (
               <div className="cv-doc text-sm text-foreground">
-                {text}
+                {text.split("\n").map((line, i) => {
+                  const letters = line.replace(/[^A-Za-zÀ-ÿ]/g, "");
+                  const heading =
+                    i > 0 && letters.length >= 3 && letters === letters.toUpperCase() && line.length < 60;
+                  if (i === 0)
+                    return (
+                      <div key={i} className="font-display text-xl font-bold text-primary">
+                        {line}
+                      </div>
+                    );
+                  if (heading)
+                    return (
+                      <div key={i} className="mt-3 border-b border-sky pb-1 font-display text-sm font-bold tracking-wide text-primary">
+                        {line}
+                      </div>
+                    );
+                  return <div key={i}>{line || "\u00a0"}</div>;
+                })}
                 {loading && <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-primary align-middle" />}
               </div>
             )}

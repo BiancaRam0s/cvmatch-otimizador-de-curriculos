@@ -22,7 +22,7 @@ const statusStyle = {
 
 export function AnalysisResults({ analysis }: { analysis: Analysis }) {
   return (
-    <div className="grid gap-5 lg:grid-cols-3">
+    <div className="grid items-start gap-5 lg:grid-cols-3">
       <section className="animate-rise-in flex flex-col items-center gap-4 rounded-3xl bg-card p-6 text-center shadow-card">
         <h3 className="text-lg font-semibold">Compatibilidade</h3>
         <ScoreRing score={analysis.score} />
