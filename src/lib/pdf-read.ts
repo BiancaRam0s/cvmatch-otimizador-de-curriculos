@@ -13,7 +13,7 @@ export async function extractPdfText(file: File): Promise<string> {
     let lastY: number | null = null;
     for (const item of content.items) {
       if (!("str" in item)) continue;
-      const y = (item.transform as number[])[5];
+      const y = (item.transform as number[])[5] ?? 0;
       if (lastY !== null && Math.abs(y - lastY) > 2) pageText += "\n";
       pageText += item.str;
       lastY = y;
