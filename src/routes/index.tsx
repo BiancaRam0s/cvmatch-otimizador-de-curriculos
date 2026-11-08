@@ -44,6 +44,10 @@ function TextCard({
   value,
   onChange,
   placeholder,
+  fileName,
+  fileLoading,
+  onFilePick,
+  onFileClear,
 }: {
   id: string;
   icon: typeof FileText;
@@ -52,18 +56,67 @@ function TextCard({
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  fileName?: string | null;
+  fileLoading?: boolean;
+  onFilePick?: (file: File) => void;
+  onFileClear?: () => void;
 }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) onFilePick?.(f);
+    e.target.value = "";
+  };
   return (
     <div className="flex flex-col rounded-3xl bg-card p-5 shadow-card sm:p-6">
-      <label htmlFor={id} className="mb-3 flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <span>
-          <span className="block font-display text-lg font-semibold text-primary">{title}</span>
-          <span className="block text-xs text-muted-foreground">{hint}</span>
-        </span>
-      </label>
+      <div className="mb-3 flex items-center gap-3">
+        <label htmlFor={id} className="flex flex-1 items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-primary">
+            <Icon className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block font-display text-lg font-semibold text-primary">{title}</span>
+            <span className="block text-xs text-muted-foreground">{hint}</span>
+          </span>
+        </label>
+        {onFilePick && (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={pickFile}
+              aria-label="Enviar currículo em PDF"
+            />
+            {fileName ? (
+              <span className="flex max-w-[55%] items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{fileName}</span>
+                <button
+                  type="button"
+                  onClick={onFileClear}
+                  className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-card"
+                  aria-label="Remover PDF"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={fileLoading}
+                onClick={() => fileRef.current?.click()}
+              >
+                {fileLoading ? <Loader2 className="animate-spin" /> : <Upload />}
+                {fileLoading ? "Lendo PDF…" : "Enviar PDF"}
+              </Button>
+            )}
+          </>
+        )}
+      </div>
       <textarea
         id={id}
         value={value}
