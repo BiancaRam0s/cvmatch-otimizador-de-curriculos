@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
-import { BriefcaseBusiness, FileText, Loader2, RotateCcw, ScanSearch, Wand2 } from "lucide-react";
+import { useRef, useState, type ChangeEvent } from "react";
+import { BriefcaseBusiness, FileText, Loader2, RotateCcw, ScanSearch, Upload, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Chameleon } from "@/components/cvmatch/Chameleon";
@@ -11,6 +11,7 @@ import { OptimizedCv } from "@/components/cvmatch/OptimizedCv";
 import { analyzeCv } from "@/lib/cv.functions";
 import { cvInputSchema, MAX_TEXT, type Analysis, type CvInput } from "@/lib/cv-analysis";
 import { SAMPLE_JOB, SAMPLE_RESUME } from "@/lib/sample";
+import { extractPdfText } from "@/lib/pdf-read";
 
 export const Route = createFileRoute("/")({
   head: () => ({
