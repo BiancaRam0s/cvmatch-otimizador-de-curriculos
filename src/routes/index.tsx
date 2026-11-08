@@ -208,6 +208,7 @@ function Index() {
   const fillSample = () => {
     setJob(SAMPLE_JOB);
     setResume(SAMPLE_RESUME);
+    setResumeFile(null);
     setError(null);
     toast("Exemplo preenchido. Agora é só analisar!");
   };
@@ -217,6 +218,7 @@ function Index() {
     setResume("");
     setResult(null);
     setError(null);
+    setResumeFile(null);
   };
 
   return (
@@ -273,8 +275,15 @@ function Index() {
             title="Seu currículo"
             hint="Cole o texto do seu currículo atual."
             value={resume}
-            onChange={setResume}
+            onChange={(v) => {
+              setResume(v);
+              setResumeFile(null);
+            }}
             placeholder="Nome, contato, resumo, experiências, formação, habilidades…"
+            fileName={resumeFile}
+            fileLoading={readingPdf}
+            onFilePick={handleResumeFile}
+            onFileClear={() => setResumeFile(null)}
           />
         </section>
 
