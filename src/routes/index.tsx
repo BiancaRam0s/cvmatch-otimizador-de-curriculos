@@ -141,7 +141,31 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ analysis: Analysis; input: CvInput } | null>(null);
   const [mascotMsg, setMascotMsg] = useState<string | null>(null);
+  const [resumeFile, setResumeFile] = useState<string | null>(null);
+  const [readingPdf, setReadingPdf] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const handleResumeFile = async (file: File) => {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Envie um arquivo PDF.");
+      return;
+    }
+    setReadingPdf(true);
+    try {
+      const text = await extractPdfText(file);
+      if (!text) {
+        toast.error("Não consegui ler o texto deste PDF. Cole o conteúdo manualmente.");
+        return;
+      }
+      setResume(text.slice(0, MAX_TEXT));
+      setResumeFile(file.name);
+      toast.success("Currículo importado do PDF!");
+    } catch {
+      toast.error("Não foi possível ler este PDF. Tente colar o texto do currículo.");
+    } finally {
+      setReadingPdf(false);
+    }
+  };
 
   const flash = (msg: string, ms = 4500) => {
     setMascotMsg(msg);
