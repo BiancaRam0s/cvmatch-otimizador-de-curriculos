@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
-import { BriefcaseBusiness, FileText, Loader2, RotateCcw, ScanSearch, Wand2 } from "lucide-react";
+import { useRef, useState, type ChangeEvent } from "react";
+import { BriefcaseBusiness, FileText, Loader2, RotateCcw, ScanSearch, Upload, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Chameleon } from "@/components/cvmatch/Chameleon";
@@ -11,6 +11,7 @@ import { OptimizedCv } from "@/components/cvmatch/OptimizedCv";
 import { analyzeCv } from "@/lib/cv.functions";
 import { cvInputSchema, MAX_TEXT, type Analysis, type CvInput } from "@/lib/cv-analysis";
 import { SAMPLE_JOB, SAMPLE_RESUME } from "@/lib/sample";
+import { extractPdfText } from "@/lib/pdf-read";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,6 +44,10 @@ function TextCard({
   value,
   onChange,
   placeholder,
+  fileName,
+  fileLoading,
+  onFilePick,
+  onFileClear,
 }: {
   id: string;
   icon: typeof FileText;
@@ -51,18 +56,67 @@ function TextCard({
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  fileName?: string | null;
+  fileLoading?: boolean;
+  onFilePick?: (file: File) => void;
+  onFileClear?: () => void;
 }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) onFilePick?.(f);
+    e.target.value = "";
+  };
   return (
     <div className="flex flex-col rounded-3xl bg-card p-5 shadow-card sm:p-6">
-      <label htmlFor={id} className="mb-3 flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <span>
-          <span className="block font-display text-lg font-semibold text-primary">{title}</span>
-          <span className="block text-xs text-muted-foreground">{hint}</span>
-        </span>
-      </label>
+      <div className="mb-3 flex items-center gap-3">
+        <label htmlFor={id} className="flex flex-1 items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-primary">
+            <Icon className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block font-display text-lg font-semibold text-primary">{title}</span>
+            <span className="block text-xs text-muted-foreground">{hint}</span>
+          </span>
+        </label>
+        {onFilePick && (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={pickFile}
+              aria-label="Enviar currículo em PDF"
+            />
+            {fileName ? (
+              <span className="flex max-w-[55%] items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{fileName}</span>
+                <button
+                  type="button"
+                  onClick={onFileClear}
+                  className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-card"
+                  aria-label="Remover PDF"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={fileLoading}
+                onClick={() => fileRef.current?.click()}
+              >
+                {fileLoading ? <Loader2 className="animate-spin" /> : <Upload />}
+                {fileLoading ? "Lendo PDF…" : "Enviar PDF"}
+              </Button>
+            )}
+          </>
+        )}
+      </div>
       <textarea
         id={id}
         value={value}
@@ -87,7 +141,31 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ analysis: Analysis; input: CvInput } | null>(null);
   const [mascotMsg, setMascotMsg] = useState<string | null>(null);
+  const [resumeFile, setResumeFile] = useState<string | null>(null);
+  const [readingPdf, setReadingPdf] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const handleResumeFile = async (file: File) => {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Envie um arquivo PDF.");
+      return;
+    }
+    setReadingPdf(true);
+    try {
+      const text = await extractPdfText(file);
+      if (!text) {
+        toast.error("Não consegui ler o texto deste PDF. Cole o conteúdo manualmente.");
+        return;
+      }
+      setResume(text.slice(0, MAX_TEXT));
+      setResumeFile(file.name);
+      toast.success("Currículo importado do PDF!");
+    } catch {
+      toast.error("Não foi possível ler este PDF. Tente colar o texto do currículo.");
+    } finally {
+      setReadingPdf(false);
+    }
+  };
 
   const flash = (msg: string, ms = 4500) => {
     setMascotMsg(msg);
@@ -130,6 +208,7 @@ function Index() {
   const fillSample = () => {
     setJob(SAMPLE_JOB);
     setResume(SAMPLE_RESUME);
+    setResumeFile(null);
     setError(null);
     toast("Exemplo preenchido. Agora é só analisar!");
   };
@@ -139,6 +218,7 @@ function Index() {
     setResume("");
     setResult(null);
     setError(null);
+    setResumeFile(null);
   };
 
   return (
@@ -195,8 +275,15 @@ function Index() {
             title="Seu currículo"
             hint="Cole o texto do seu currículo atual."
             value={resume}
-            onChange={setResume}
+            onChange={(v) => {
+              setResume(v);
+              setResumeFile(null);
+            }}
             placeholder="Nome, contato, resumo, experiências, formação, habilidades…"
+            fileName={resumeFile}
+            fileLoading={readingPdf}
+            onFilePick={handleResumeFile}
+            onFileClear={() => setResumeFile(null)}
           />
         </section>
 
